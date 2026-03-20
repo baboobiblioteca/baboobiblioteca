@@ -20,7 +20,7 @@ const Backpacks = () => {
         loadData();
     }, []);
 
-    const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`;
+    const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`);
 
     const loadData = async () => {
         try {
@@ -143,7 +143,7 @@ const Backpacks = () => {
                         <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
                             {editingId && backpacks.find(b => b.id === editingId)?.image_url && (
                                 <img 
-                                    src={`${API_URL}${backpacks.find(b => b.id === editingId).image_url}`} 
+                                    src={backpacks.find(b => b.id === editingId).image_url.startsWith('http') ? backpacks.find(b => b.id === editingId).image_url : `${API_URL}${backpacks.find(b => b.id === editingId).image_url}`} 
                                     alt="Actual" 
                                     style={{height: '40px', width: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc'}} 
                                     title="Imagen actual"
@@ -210,7 +210,7 @@ const Backpacks = () => {
                             <tr key={b.id} style={{borderBottom: '1px solid var(--border-color)'}}>
                                 <td style={{padding: '8px', textAlign: 'center'}}>
                                     {b.image_url ? (
-                                        <img src={`${API_URL}${b.image_url}`} alt="Mochila" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc'}} />
+                                        <img src={b.image_url.startsWith('http') ? b.image_url : `${API_URL}${b.image_url}`} alt="Mochila" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc'}} />
                                     ) : (
                                         <div style={{width: '60px', height: '60px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#999', margin: '0 auto'}}>N/A</div>
                                     )}
