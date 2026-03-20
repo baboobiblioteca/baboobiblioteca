@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -8,106 +8,83 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
-// Configurar SQLite Database
-const db = new sqlite3.Database('./babbo_biblioteca.db', (err) => {
-  if (err) {
-    console.error('Error opening database', err.message);
-  } else {
-    console.log('Connected to the SQLite database.');
+// Configurar Supabase PostgreSQL Database (Wrapper para mantener compatibilidad con sintaxis de SQLite)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres.dmuyclcxmggabgxxtssw:Cualquiera89%26@aws-1-us-east-1.pooler.supabase.com:6543/postgres',
+  ssl: { rejectUnauthorized: false }
+});
+
+pool.connect((err) => {
+  if (err) console.error('Error connecting to Supabase', err.stack);
+  else console.log('Connected to Supabase PostgreSQL database.');
+});
+
+const db = {
+  _convertQuery: (sql) => {
+    let i = 1;
+    // Convierte ? en $1, $2, etc. Además, SQLite usa INSERT OR IGNORE, en Postgres es ON CONFLICT DO NOTHING
+    let finalSql = sql.replace(/\?/g, () => '$' + (i++));
+    finalSql = finalSql.replace(/INSERT OR IGNORE INTO users/ig, 'INSERT INTO users'); // Simplification for the admin initial insert if we ever run it
+    return finalSql;
+  },
+  
+  get: (sql, params, callback) => {
+    if (typeof params === 'function') { callback = params; params = []; }
+    pool.query(db._convertQuery(sql), params, (err, res) => {
+      if (err) callback(err, null);
+      else callback(null, res.rows[0]);
+    });
+  },
+  
+  all: (sql, params, callback) => {
+    if (typeof params === 'function') { callback = params; params = []; }
+    pool.query(db._convertQuery(sql), params, (err, res) => {
+      if (err) callback(err, null);
+      else callback(null, res.rows);
+    });
+  },
+  
+  run: function(sql, params, callback) {
+    if (typeof params === 'function') { callback = params; params = []; }
+    if (!params) params = [];
     
-    // Inicializar Esquema de Base de Datos
-    db.serialize(() => {
-      db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        telefono TEXT,
-        password_hash TEXT NOT NULL,
-        created_by INTEGER,
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
+    let isInsert = sql.trim().toUpperCase().startsWith('INSERT');
+    let pgSql = db._convertQuery(sql);
+    if (isInsert && !pgSql.toUpperCase().includes('RETURNING ID')) {
+      pgSql += ' RETURNING id';
+    }
 
-      db.run(`CREATE TABLE IF NOT EXISTS sectors (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        created_by INTEGER,
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
-
-      db.run(`CREATE TABLE IF NOT EXISTS schools (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sector_id INTEGER NOT NULL,
-        nombre TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('Rural', 'Urbana')),
-        created_by INTEGER,
-        FOREIGN KEY (sector_id) REFERENCES sectors (id),
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
-
-      db.run(`CREATE TABLE IF NOT EXISTS pavilions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        school_id INTEGER NOT NULL,
-        nombre TEXT NOT NULL,
-        teacher_name TEXT NOT NULL,
-        teacher_phone TEXT,
-        student_count INTEGER NOT NULL DEFAULT 0,
-        created_by INTEGER,
-        FOREIGN KEY (school_id) REFERENCES schools (id),
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
-
-      db.run(`CREATE TABLE IF NOT EXISTS backpacks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        internal_number TEXT NOT NULL UNIQUE,
-        graphic_identifier TEXT,
-        color TEXT,
-        book_count INTEGER NOT NULL DEFAULT 0,
-        image_url TEXT,
-        created_by INTEGER,
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
-
-      db.run(`CREATE TABLE IF NOT EXISTS transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        backpack_id INTEGER NOT NULL,
-        pavilion_id INTEGER,
-        action TEXT NOT NULL CHECK(action IN ('Delivered', 'Picked_Up')),
-        transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        created_by INTEGER NOT NULL,
-        FOREIGN KEY (backpack_id) REFERENCES backpacks (id),
-        FOREIGN KEY (pavilion_id) REFERENCES pavilions (id),
-        FOREIGN KEY (created_by) REFERENCES users (id)
-      )`);
-
-      // Crear Usuario Admin inicial si no existe
-      bcrypt.hash('Something89&', 10, (err, hash) => {
-        if (!err) {
-          db.run(`INSERT OR IGNORE INTO users (id, nombre, telefono, password_hash)
-                  VALUES (1, 'Admin', '0000000000', ?)`, [hash]);
+    pool.query(pgSql, params, (err, res) => {
+      if (err) {
+        if (callback) callback.call(this, err);
+      } else {
+        let lastID = null;
+        if (isInsert && res.rows && res.rows.length > 0) {
+          lastID = res.rows[0].id;
         }
-      });
+        const context = { lastID };
+        if (callback) callback.call(context, null);
+      }
     });
   }
-});
+};
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Set up static files for uploads
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.SUPABASE_URL || 'https://dmuyclcxmggabgxxtssw.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdXljbGN4bWdnYWJneHh0c3N3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTk3NzQsImV4cCI6MjA4OTU5NTc3NH0.PE1gaa1tHpkc7KCfbHjTKr-qDGvKSwGGraTc-Nhbsdc';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Set up static files for uploads (retrocompatibilidad)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configuración Multer para subida de archivos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configuración Multer en MEMORIA para mandarlo a Supabase directamente
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Helper function para enviar DB global a las rutas (por simplicidad en fase inicial Mínimo Producto Viable)
@@ -323,17 +300,24 @@ app.get('/api/backpacks', authenticateToken, (req, res) => {
     });
 });
 
-app.post('/api/backpacks', authenticateToken, upload.single('image'), (req, res) => {
-    // Cuando hay un archivo subido con Multer, los campos de string vienen en req.body y el archivo en req.file
+app.post('/api/backpacks', authenticateToken, upload.single('image'), async (req, res) => {
     const { internal_number, graphic_identifier, color, book_count } = req.body;
+    let image_url = null;
     
-    // Si req.file existe, guardamos la URL estática relativa, sino dejamos el campo vacío
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    if (req.file) {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(req.file.originalname);
+        const { data, error } = await supabase.storage.from('mochilas').upload(uniqueName, req.file.buffer, {
+            contentType: req.file.mimetype
+        });
+        if (error) return res.status(500).json({ error: 'Supabase Storage Error: ' + error.message });
+        const { data: publicData } = supabase.storage.from('mochilas').getPublicUrl(uniqueName);
+        image_url = publicData.publicUrl;
+    }
 
     db.run('INSERT INTO backpacks (internal_number, graphic_identifier, color, book_count, image_url, created_by) VALUES (?, ?, ?, ?, ?, ?)', 
       [internal_number, graphic_identifier, color, book_count, image_url, req.user.id], function(err) {
         if (err) {
-            if (err.message.includes('UNIQUE constraint failed: backpacks.internal_number')) {
+            if (err.message.includes('unique constraint') || err.message.includes('UNIQUE constraint failed')) {
                 return res.status(400).json({ error: 'Ese Identificador ya está registrado. Para hacer cambios, busca la mochila abajo y presiona Editar (lápiz).' });
             }
             return res.status(500).json({ error: err.message });
@@ -343,13 +327,19 @@ app.post('/api/backpacks', authenticateToken, upload.single('image'), (req, res)
 });
 
 // Update Backpack
-app.put('/api/backpacks/:id', authenticateToken, upload.single('image'), (req, res) => {
+app.put('/api/backpacks/:id', authenticateToken, upload.single('image'), async (req, res) => {
     const { id } = req.params;
     const { internal_number, graphic_identifier, color, book_count } = req.body;
     
-    // If a new file is uploaded, update query includes image_url
     if (req.file) {
-        const image_url = `/uploads/${req.file.filename}`;
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(req.file.originalname);
+        const { data, error } = await supabase.storage.from('mochilas').upload(uniqueName, req.file.buffer, {
+            contentType: req.file.mimetype
+        });
+        if (error) return res.status(500).json({ error: 'Supabase Storage Error: ' + error.message });
+        const { data: publicData } = supabase.storage.from('mochilas').getPublicUrl(uniqueName);
+        const image_url = publicData.publicUrl;
+
         db.run(`UPDATE backpacks SET internal_number = ?, graphic_identifier = ?, color = ?, book_count = ?, image_url = ? WHERE id = ?`,
             [internal_number, graphic_identifier, color, book_count, image_url, id], function(err) {
             if (err) return res.status(500).json({ error: err.message });
