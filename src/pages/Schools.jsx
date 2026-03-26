@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
+import { useToast } from '../services/ToastContext';
 import { Trash, Edit2, Plus, Save, X } from 'lucide-react';
 
 const Schools = () => {
@@ -12,6 +13,7 @@ const Schools = () => {
     const [editingId, setEditingId] = useState(null);
     
     const { fetchWithAuth } = useAuth();
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadData();
@@ -50,10 +52,11 @@ const Schools = () => {
         try {
             const res = await fetchWithAuth(`/api/schools/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                showToast('Escuela eliminada correctamente');
                 loadData();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al eliminar');
+                showToast(data.error || 'Error al eliminar', 'error');
             }
         } catch(e) {
              console.error(e);
@@ -78,15 +81,15 @@ const Schools = () => {
             
             if (!res.ok) {
                 const data = await res.json();
-                alert(data.error || 'Error al procesar');
+                showToast(data.error || 'Error al procesar', 'error');
                 return;
             }
-            
+            showToast(editingId ? 'Escuela actualizada correctamente' : 'Escuela registrada correctamente');
             resetForm();
             loadData();
         } catch (e) {
             console.error(e);
-            alert("Error de conexión");
+            showToast("Error de conexión", 'error');
         }
     }
 

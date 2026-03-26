@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
+import { useToast } from '../services/ToastContext';
 import { Trash, Edit2, Plus, Save, X } from 'lucide-react';
 
 const Sectors = () => {
@@ -7,6 +8,7 @@ const Sectors = () => {
     const [nombre, setNombre] = useState('');
     const [editingId, setEditingId] = useState(null);
     const { fetchWithAuth } = useAuth();
+    const { showToast } = useToast();
     
     useEffect(() => {
         loadSectors();
@@ -38,10 +40,11 @@ const Sectors = () => {
         try {
             const res = await fetchWithAuth(`/api/sectors/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                showToast('Colegio eliminado correctamente');
                 loadSectors();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al eliminar');
+                showToast(data.error || 'Error al eliminar', 'error');
             }
         } catch(e) {
              console.error(e);
@@ -66,15 +69,15 @@ const Sectors = () => {
             
             if (!res.ok) {
                 const data = await res.json();
-                alert(data.error || 'Error al procesar la solicitud');
+                showToast(data.error || 'Error al procesar la solicitud', 'error');
                 return;
             }
-            
+            showToast(editingId ? 'Colegio actualizado correctamente' : 'Colegio agregado correctamente');
             resetForm();
             loadSectors();
         } catch (e) {
             console.error(e);
-            alert("Error de conexión");
+            showToast("Error de conexión", 'error');
         }
     }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import { useAuth } from '../services/AuthContext';
+import { useToast } from '../services/ToastContext';
 import { Package, Truck, CheckCircle, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -69,6 +70,7 @@ const Transactions = () => {
     const [editPavilionStudents, setEditPavilionStudents] = useState('');
     
     const { fetchWithAuth } = useAuth();
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadData();
@@ -146,10 +148,11 @@ const Transactions = () => {
             
             if (!resTx.ok) {
                 const errData = await resTx.json().catch(() => ({}));
-                alert("Error al registrar: " + (errData.error || resTx.statusText));
+                showToast("Error al registrar: " + (errData.error || resTx.statusText), 'error');
                 return;
             }
 
+            showToast('Entrega registrada correctamente');
             
             // Reseteamos el formulario
             setBackpackId(''); 
@@ -198,9 +201,10 @@ const Transactions = () => {
             });
             if (!resTx.ok) {
                 const errData = await resTx.json().catch(() => ({}));
-                alert("Error al registrar recogida: " + (errData.error || resTx.statusText));
+                showToast("Error al registrar recogida: " + (errData.error || resTx.statusText), 'error');
                 return;
             }
+            showToast('Recogida registrada correctamente');
             loadData();
         } catch (e) {
             console.error(e);
@@ -268,9 +272,10 @@ const Transactions = () => {
             });
             if (!resTx.ok) {
                 const errData = await resTx.json().catch(() => ({}));
-                alert("Error al actualizar: " + (errData.error || resTx.statusText));
+                showToast("Error al actualizar: " + (errData.error || resTx.statusText), 'error');
                 return;
             }
+            showToast('Actualización realizada correctamente');
             
             setEditingTx(null);
             loadData();
@@ -282,8 +287,13 @@ const Transactions = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.")) return;
         try {
-            await fetchWithAuth(`/api/transactions/${id}`, { method: 'DELETE' });
-            loadData();
+            const res = await fetchWithAuth(`/api/transactions/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Eliminación realizada correctamente');
+                loadData();
+            } else {
+                showToast('Error al eliminar', 'error');
+            }
         } catch(e) { console.error(e); }
     };
 
@@ -300,20 +310,22 @@ const Transactions = () => {
         }
     };
 
-    // Helper to format SQLite timestamp
+    // Helper to format SQLite/Postgres timestamp
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        const str = String(dateString);
-        const isoStr = str.includes(' ') ? str.replace(' ', 'T') : str;
-        const d = new Date(isoStr);
-        if (isNaN(d.getTime())) return str; // fallback just in case
-        
-        const yy = String(d.getFullYear()).slice(-2);
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const mins = String(d.getMinutes()).padStart(2, '0');
-        return `${yy}/${mm}/${dd} ${hours}:${mins}`;
+        // Evita que el navegador aplique conversión de zonas horarias restando horas
+        let ds = String(dateString);
+        if (ds.includes('T')) {
+            ds = ds.split('T')[0] + ' ' + ds.split('T')[1].substring(0, 5);
+        } else {
+            ds = ds.substring(0, 16);
+        }
+        const parts = ds.split(' ');
+        if (parts.length !== 2) return dateString;
+        const [yyyy, mm, dd] = parts[0].split('-');
+        if (!yyyy || !mm || !dd) return dateString;
+        const yy = yyyy.slice(-2);
+        return `${yy}/${mm}/${dd} ${parts[1]}`;
     }
 
     const activeDeliveriesMap = {};

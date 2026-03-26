@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
+import { useToast } from '../services/ToastContext';
 import { Trash, Edit2, Plus, Save, X } from 'lucide-react';
 
 const Users = () => {
@@ -11,6 +12,7 @@ const Users = () => {
     
     const [editingId, setEditingId] = useState(null);
     const { fetchWithAuth } = useAuth();
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadData();
@@ -49,10 +51,11 @@ const Users = () => {
         try {
             const res = await fetchWithAuth(`/api/users/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                showToast('Usuario eliminado correctamente');
                 loadData();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al eliminar usuario');
+                showToast(data.error || 'Error al eliminar usuario', 'error');
             }
         } catch(e) {
              console.error(e);
@@ -81,10 +84,11 @@ const Users = () => {
             
             if (!res.ok) {
                 const data = await res.json();
-                alert(data.error || 'Error al procesar');
+                showToast(data.error || 'Error al procesar', 'error');
                 return;
             }
             
+            showToast(editingId ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
             resetForm();
             loadData();
         } catch (e) {

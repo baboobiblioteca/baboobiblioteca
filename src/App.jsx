@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './services/AuthContext';
 import { ProtectedRoute, AdminRoute, Login } from './components/Login';
 import Layout from './components/Layout';
+import { ToastProvider } from './services/ToastContext';
 
 // Pages
 import Home from './pages/Home';
@@ -16,26 +17,28 @@ import Users from './pages/Users';
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        
-        {/* Rutas Protegidas que usan el Layout principal */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/sectors" element={<Sectors />} />
-            <Route path="/schools" element={<Schools />} />
-            <Route path="/pavilions" element={<Pavilions />} />
-            <Route path="/backpacks" element={<Backpacks />} />
-            <Route path="/transactions" element={<Transactions />} />
-            
-            {/* Solo Admin */}
-            <Route element={<AdminRoute />}>
-              <Route path="/users" element={<Users />} />
+      <ToastProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          {/* Rutas Protegidas que usan el Layout principal */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/sectors" element={<Sectors />} />
+              <Route path="/schools" element={<Schools />} />
+              <Route path="/pavilions" element={<Pavilions />} />
+              <Route path="/backpacks" element={<Backpacks />} />
+              <Route path="/transactions" element={<Transactions />} />
+              
+              {/* Solo Admin */}
+              <Route element={<AdminRoute />}>
+                <Route path="/users" element={<Users />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
-      </Routes>
+        </Routes>
+      </ToastProvider>
     </AuthProvider>
   );
 }

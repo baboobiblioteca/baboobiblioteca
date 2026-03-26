@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../services/AuthContext';
+import { useToast } from '../services/ToastContext';
 import { Trash, Edit2, Plus, Save, X } from 'lucide-react';
 
 const Backpacks = () => {
@@ -15,6 +16,7 @@ const Backpacks = () => {
     const fileInputCameraRef = useRef(null);
     const fileInputGalleryRef = useRef(null);    
     const { fetchWithAuth } = useAuth();
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadData();
@@ -57,8 +59,13 @@ const Backpacks = () => {
     const handleDelete = async (id) => {
         if(!window.confirm('¿Está seguro de eliminar esta mochila? Esta acción no se puede deshacer.')) return;
         try {
-            await fetchWithAuth(`/api/backpacks/${id}`, { method: 'DELETE' });
-            loadData();
+            const res = await fetchWithAuth(`/api/backpacks/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Mochila eliminada correctamente');
+                loadData();
+            } else {
+                showToast('Error al eliminar', 'error');
+            }
         } catch(e) {
              console.error(e);
         }
@@ -95,10 +102,11 @@ const Backpacks = () => {
             
             if (!res.ok) {
                 const data = await res.json();
-                alert(data.error || 'Error al procesar la mochila');
+                showToast(data.error || 'Error al procesar la mochila', 'error');
                 return;
             }
             
+            showToast(editingId ? 'Mochila actualizada correctamente' : 'Mochila registrada correctamente');
             resetForm();
             loadData();
         } catch (e) {
