@@ -134,7 +134,7 @@ const Transactions = () => {
 
             // Luego registramos la transacción usando el ID del nivel
             const formattedDate = transactionDate.replace('T', ' ') + ':00';
-            await fetchWithAuth('/api/transactions', {
+            const resTx = await fetchWithAuth('/api/transactions', {
                 method: 'POST',
                 body: JSON.stringify({ 
                     backpack_id: backpackId, 
@@ -143,6 +143,13 @@ const Transactions = () => {
                     transaction_date: formattedDate
                 })
             });
+            
+            if (!resTx.ok) {
+                const errData = await resTx.json().catch(() => ({}));
+                alert("Error al registrar: " + (errData.error || resTx.statusText));
+                return;
+            }
+
             
             // Reseteamos el formulario
             setBackpackId(''); 
@@ -180,7 +187,7 @@ const Transactions = () => {
         
         try {
             const formattedDate = getLocalDatetime().replace('T', ' ') + ':00';
-            await fetchWithAuth('/api/transactions', {
+            const resTx = await fetchWithAuth('/api/transactions', {
                 method: 'POST',
                 body: JSON.stringify({ 
                     backpack_id: tx.backpack_id || backpacks.find(b => b.internal_number === tx.backpack_number)?.id,
@@ -189,6 +196,11 @@ const Transactions = () => {
                     transaction_date: formattedDate
                 })
             });
+            if (!resTx.ok) {
+                const errData = await resTx.json().catch(() => ({}));
+                alert("Error al registrar recogida: " + (errData.error || resTx.statusText));
+                return;
+            }
             loadData();
         } catch (e) {
             console.error(e);
@@ -245,7 +257,7 @@ const Transactions = () => {
             const formattedDate = editTransactionDate.replace('T', ' ') + ':00';
             const originalTx = transactions.find(t => t.id === editingTx);
             
-            await fetchWithAuth(`/api/transactions/${editingTx}`, {
+            const resTx = await fetchWithAuth(`/api/transactions/${editingTx}`, {
                 method: 'PUT',
                 body: JSON.stringify({ 
                     backpack_id: editBackpackId, 
@@ -254,6 +266,11 @@ const Transactions = () => {
                     transaction_date: formattedDate
                 })
             });
+            if (!resTx.ok) {
+                const errData = await resTx.json().catch(() => ({}));
+                alert("Error al actualizar: " + (errData.error || resTx.statusText));
+                return;
+            }
             
             setEditingTx(null);
             loadData();
