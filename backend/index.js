@@ -306,11 +306,11 @@ app.post('/api/backpacks', authenticateToken, upload.single('image'), async (req
     
     if (req.file) {
         const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(req.file.originalname);
-        const { data, error } = await supabase.storage.from('mochilas').upload(uniqueName, req.file.buffer, {
+        const { data, error } = await supabase.storage.from('Mochilas').upload(uniqueName, req.file.buffer, {
             contentType: req.file.mimetype
         });
         if (error) return res.status(500).json({ error: 'Supabase Storage Error: ' + error.message });
-        const { data: publicData } = supabase.storage.from('mochilas').getPublicUrl(uniqueName);
+        const { data: publicData } = supabase.storage.from('Mochilas').getPublicUrl(uniqueName);
         image_url = publicData.publicUrl;
     }
 
@@ -333,11 +333,11 @@ app.put('/api/backpacks/:id', authenticateToken, upload.single('image'), async (
     
     if (req.file) {
         const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(req.file.originalname);
-        const { data, error } = await supabase.storage.from('mochilas').upload(uniqueName, req.file.buffer, {
+        const { data, error } = await supabase.storage.from('Mochilas').upload(uniqueName, req.file.buffer, {
             contentType: req.file.mimetype
         });
         if (error) return res.status(500).json({ error: 'Supabase Storage Error: ' + error.message });
-        const { data: publicData } = supabase.storage.from('mochilas').getPublicUrl(uniqueName);
+        const { data: publicData } = supabase.storage.from('Mochilas').getPublicUrl(uniqueName);
         const image_url = publicData.publicUrl;
 
         db.run(`UPDATE backpacks SET internal_number = ?, graphic_identifier = ?, color = ?, book_count = ?, image_url = ? WHERE id = ?`,
