@@ -1,0 +1,84 @@
+﻿ActÃºa como un Desarrollador Full-Stack Senior y Arquitecto de Software.
+Â Necesito que construyas un sistema web completo llamado "[Nombre de tu Proyecto, 
+ej
+: Mochilas Viajeras]".
+1. 
+Arquitectura
+ y 
+TecnologÃ­as
+ 
+Obligatorias
+:
+Frontend
+:
+Â 
+React
+ usando Vite. Debe ser una "Single Page 
+Application
+" (SPA) ultrarrÃ¡pida.
+Backend
+:
+Â Node.js con Express para crear una API 
+RESTful
+.
+Base de Datos y Archivos:
+Â PostgreSQL usando la capa gratuita de "
+Supabase
+" para los datos, y "
+Supabase
+ Storage" para subir las imÃ¡genes desde el servidor.
+AutenticaciÃ³n:
+Â Sistema de Login seguro protegiendo las rutas con tokens JWT (JSON Web Tokens) y contraseÃ±as encriptadas conÂ 
+bcrypt
+.
+2. DiseÃ±o UI / UX (Experiencia de Usuario):
+No uses 
+frameworks
+ pesados como Bootstrap o 
+Tailwind
+ a menos que yo lo pida. 
+Usa CSS 
+Vainilla
+ 
+moderno
+.
+El diseÃ±o debe sentirse premium, limpio e interactivo (sombras suaves, bordes redondeados, "
+glassmorphism
+", colores accesibles y adaptabilidad 100% a telÃ©fonos mÃ³viles).
+Toda la informaciÃ³n debe mostrarse en "Data 
+Grids
+" (Tablas) hermosas que se 
+auto-ajusten
+ u oculten texto largo con puntos suspensivos (...) en pantallas pequeÃ±as.
+Para crear y editar registros, usa "Modales" (ventanas emergentes sobre la misma pantalla) en lugar de llevarme a pÃ¡ginas nuevas.
+3. Reglas de Negocio (Modelos de Datos):
+Â 
+Necesito que el sistema gestione especÃ­ficamente estas entidades:
+Sectores y Colegios:
+Â Un colegio pertenece a un sector y debe decir si es "Rural" o "Urbano".
+Pabellones (Aulas):
+Â Pertenecen a un colegio. Deben registrar el nombre del profesor, su telÃ©fono y la cantidad exacta de alumnos.
+Mochilas (Inventario):
+Â Cada una tiene un identificador Ãºnico, un animal grÃ¡fico asociado, un color, cantidad de libros y una fotografÃ­a capturada desde la cÃ¡mara nativa del celular.
+Movimientos (Transacciones):
+Â El corazÃ³n lÃ³gico del sistema. Debe registrar entregas y recogidas de mochilas en pabellones, asegurÃ¡ndose de validar 
+cronolÃ³gicamente que no se pueda "entregar" una mochila que no ha sido "recogida" primero.
+4. 
+Requerimientos
+ 
+Funcionales
+ Extra:
+Reportes:
+Â Incluir funcionalidad para exportar las tablas (como los movimientos) directamente a formatos de Excel (.xlsx).
+Funciones MÃ³viles Innatas:
+Â Los botones que suben imÃ¡genes deben abrir directamente la cÃ¡mara fotogrÃ¡fica del telÃ©fono si se accede desde un celular (&lt;input capture="
+environment
+"&gt;).
+5. Pasos de Entrega:
+Â Por favor, primero presÃ©ntame un archivoÂ implementation_plan.mdÂ con tu diseÃ±o propuesto. Cuando lo apruebe, inicializa el proyecto localmente, escribe todo el cÃ³digo paso a paso y asegÃºrate de dejar el entorno configurado para que, al final, podamos desplegar fÃ¡cilmente a GitHub, 
+Vercel
+ (
+Frontend
+) y Render (
+Backend
+).

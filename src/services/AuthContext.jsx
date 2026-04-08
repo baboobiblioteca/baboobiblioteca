@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [workspaceMode, setWorkspaceModeState] = useState(null);
 
   useEffect(() => {
     // Check if token exists on load
@@ -14,8 +15,22 @@ export const AuthProvider = ({ children }) => {
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    
+    const storedWorkspace = localStorage.getItem('babboWorkspaceMode');
+    if (storedWorkspace) {
+      setWorkspaceModeState(storedWorkspace);
+    }
     setLoading(false);
   }, []);
+
+  const setWorkspaceMode = (mode) => {
+    if (mode) {
+      localStorage.setItem('babboWorkspaceMode', mode);
+    } else {
+      localStorage.removeItem('babboWorkspaceMode');
+    }
+    setWorkspaceModeState(mode);
+  };
 
   const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`);
 
@@ -79,7 +94,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, fetchWithAuth }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, fetchWithAuth, workspaceMode, setWorkspaceMode }}>
       {children}
     </AuthContext.Provider>
   );

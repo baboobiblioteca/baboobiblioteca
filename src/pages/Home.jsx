@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
-import { BookOpen, Users, MapPin, Truck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { BookOpen, Users, MapPin, Truck, Backpack } from 'lucide-react';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 
 const Home = () => {
-    const { user, fetchWithAuth } = useAuth();
+    const { user, fetchWithAuth, workspaceMode, setWorkspaceMode } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         schools: 0,
@@ -14,8 +14,10 @@ const Home = () => {
     });
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (workspaceMode === 'backpacks') {
+            loadData();
+        }
+    }, [workspaceMode]);
 
     const loadData = async () => {
         try {
@@ -27,7 +29,6 @@ const Home = () => {
             ]);
             
             const transData = await rt.json();
-            // Calculate active deliveries simply for UI stat
             let active = 0;
             const stateMap = {};
             [...transData].reverse().forEach(t => {
@@ -48,10 +49,43 @@ const Home = () => {
         }
     };
 
+    if (!workspaceMode) {
+        return (
+            <div style={{textAlign: 'center', marginTop: '40px'}}>
+                <h2 style={{color: 'var(--primary-color)', marginBottom: '40px', fontSize: '2rem'}}>¿Qué área deseas gestionar hoy, {user?.nombre}?</h2>
+                <div style={{display: 'flex', justifyContent: 'center', gap: '30px', flexWrap: 'wrap'}}>
+                    
+                    <div className="card workspace-card" onClick={() => setWorkspaceMode('backpacks')} 
+                        style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px', width: '320px', borderTop: '5px solid var(--accent-color)'}}>
+                        <div style={{background: 'rgba(52, 152, 219, 0.1)', padding: '25px', borderRadius: '50%', color: 'var(--accent-color)', marginBottom: '20px'}}>
+                            <Backpack size={64} />
+                        </div>
+                        <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: 'var(--primary-color)'}}>Mochilas Viajeras</h3>
+                        <p style={{color: 'var(--text-muted)', margin: 0}}>Control de logística de viajes, escuelas, niveles, mochilas y transacciones en campo.</p>
+                    </div>
+
+                    <div className="card workspace-card" onClick={() => { setWorkspaceMode('books'); navigate('/books'); }} 
+                        style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px', width: '320px', borderTop: '5px solid var(--success-color)'}}>
+                        <div style={{background: 'rgba(39, 174, 96, 0.1)', padding: '25px', borderRadius: '50%', color: 'var(--success-color)', marginBottom: '20px'}}>
+                            <BookOpen size={64} />
+                        </div>
+                        <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: 'var(--primary-color)'}}>Biblioteca Local</h3>
+                        <p style={{color: 'var(--text-muted)', margin: 0}}>Gestión del catálogo interno de libros, carga masiva desde Excel y busquedas por ISBN.</p>
+                    </div>
+
+                </div>
+            </div>
+        );
+    }
+
+    if (workspaceMode === 'books') {
+         return <Navigate to="/books" replace />;
+    }
+
     return (
         <div>
             <h2 style={{marginBottom: '20px', color: 'var(--primary-color)'}}>
-                Panel de Control, bienvenido {user?.nombre}!
+                Panel de Mochilas Viajeras
             </h2>
             
             <div style={{
@@ -82,7 +116,7 @@ const Home = () => {
 
                 <div className="card" onClick={() => navigate('/backpacks')} style={{margin: 0, display: 'flex', alignItems: 'center', gap: '20px', borderLeft: '5px solid var(--success-color)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s'}}>
                     <div style={{background: 'rgba(39, 174, 96, 0.1)', padding: '15px', borderRadius: '50%', color: 'var(--success-color)'}}>
-                        <BookOpen size={32} />
+                        <Backpack size={32} />
                     </div>
                     <div>
                         <h3 style={{fontSize: '2rem', margin: 0}}>{stats.backpacks}</h3>

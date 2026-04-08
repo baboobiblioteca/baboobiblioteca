@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const xlsx = require('xlsx');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -18,7 +19,53 @@ const pool = new Pool({
 
 pool.connect((err) => {
   if (err) console.error('Error connecting to Supabase', err.stack);
-  else console.log('Connected to Supabase PostgreSQL database.');
+  else {
+    console.log('Connected to Supabase PostgreSQL database.');
+    pool.query(`
+      CREATE TABLE IF NOT EXISTS books (
+        id SERIAL PRIMARY KEY,
+        titulo VARCHAR(255) NOT NULL,
+        autor VARCHAR(255),
+        isbn VARCHAR(100),
+        editorial VARCHAR(255),
+        anio VARCHAR(50),
+        edicion VARCHAR(50),
+        cantidad INTEGER DEFAULT 1,
+        portada_url TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS readers (
+        id SERIAL PRIMARY KEY,
+        cedula VARCHAR(50) UNIQUE NOT NULL,
+        nombre VARCHAR(100) NOT NULL,
+        apellido VARCHAR(100) NOT NULL,
+        telefono VARCHAR(50),
+        direccion TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS book_loans (
+        id SERIAL PRIMARY KEY,
+        book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+        reader_id INTEGER REFERENCES readers(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'Active' CHECK (status IN ('Active', 'Returned')),
+        loan_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        return_date TIMESTAMP,
+        created_by INTEGER REFERENCES users(id)
+      );
+    `, (err) => {
+      if (err) console.error("Error creating tables:", err);
+      else {
+          console.log("Books, readers and book_loans tables ensured.");
+          pool.query(`ALTER TABLE book_loans ADD COLUMN IF NOT EXISTS returned_by INTEGER REFERENCES users(id);`, (err) => {
+              if (err) console.error("Error adding returned_by column:", err);
+          });
+      }
+    });
+  }
 });
 
 const db = {
@@ -32,23 +79,38 @@ const db = {
   
   get: (sql, params, callback) => {
     if (typeof params === 'function') { callback = params; params = []; }
-    pool.query(db._convertQuery(sql), params, (err, res) => {
-      if (err) callback(err, null);
-      else callback(null, res.rows[0]);
-    });
+    if (!params) params = [];
+    const sanitizedParams = params.map(p => p === undefined ? null : p);
+    try {
+        pool.query(db._convertQuery(sql), sanitizedParams, (err, res) => {
+          if (err) callback(err, null);
+          else callback(null, res.rows[0]);
+        });
+    } catch(err) {
+        if(callback) callback(err, null);
+    }
   },
   
   all: (sql, params, callback) => {
     if (typeof params === 'function') { callback = params; params = []; }
-    pool.query(db._convertQuery(sql), params, (err, res) => {
-      if (err) callback(err, null);
-      else callback(null, res.rows);
-    });
+    if (!params) params = [];
+    const sanitizedParams = params.map(p => p === undefined ? null : p);
+    try {
+        pool.query(db._convertQuery(sql), sanitizedParams, (err, res) => {
+          if (err) callback(err, null);
+          else callback(null, res.rows);
+        });
+    } catch(err) {
+        if(callback) callback(err, null);
+    }
   },
   
   run: function(sql, params, callback) {
     if (typeof params === 'function') { callback = params; params = []; }
     if (!params) params = [];
+    
+    // Sanitize params: pg library throws server-crashing errors if any param is undefined
+    const sanitizedParams = params.map(p => p === undefined ? null : p);
     
     let isInsert = sql.trim().toUpperCase().startsWith('INSERT');
     let pgSql = db._convertQuery(sql);
@@ -56,18 +118,22 @@ const db = {
       pgSql += ' RETURNING id';
     }
 
-    pool.query(pgSql, params, (err, res) => {
-      if (err) {
+    try {
+        pool.query(pgSql, sanitizedParams, (err, res) => {
+          if (err) {
+            if (callback) callback.call(this, err);
+          } else {
+            let lastID = null;
+            if (isInsert && res.rows && res.rows.length > 0) {
+              lastID = res.rows[0].id;
+            }
+            const context = { lastID };
+            if (callback) callback.call(context, null);
+          }
+        });
+    } catch (err) {
         if (callback) callback.call(this, err);
-      } else {
-        let lastID = null;
-        if (isInsert && res.rows && res.rows.length > 0) {
-          lastID = res.rows[0].id;
-        }
-        const context = { lastID };
-        if (callback) callback.call(context, null);
-      }
-    });
+    }
   }
 };
 
@@ -292,6 +358,90 @@ app.delete('/api/pavilions/:id', authenticateToken, (req, res) => {
     });
 });
 
+// --- RUTAS DE LIBROS ---
+app.get('/api/books', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT b.*, 
+               (SELECT COUNT(*) FROM book_loans WHERE book_id = b.id AND status = 'Active') as prestados
+        FROM books b 
+        ORDER BY b.id DESC
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/books', authenticateToken, (req, res) => {
+    const { titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url } = req.body;
+    db.run('INSERT INTO books (titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+      [titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url, req.user.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url });
+    });
+});
+
+app.put('/api/books/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url } = req.body;
+    db.run('UPDATE books SET titulo = ?, autor = ?, isbn = ?, editorial = ?, anio = ?, edicion = ?, cantidad = ?, portada_url = ? WHERE id = ?', 
+      [titulo, autor, isbn, editorial, anio, edicion, cantidad, portada_url, id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.delete('/api/books/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM books WHERE id = ?', [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.post('/api/books/upload', authenticateToken, upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+    try {
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = xlsx.utils.sheet_to_json(sheet);
+        
+        let count = 0;
+        
+        data.forEach(row => {
+            const getVal = (keys) => {
+                for (let k of keys) {
+                    let found = Object.keys(row).find(x => x.toLowerCase().trim() === k);
+                    if (found && row[found]) return String(row[found]);
+                }
+                return null;
+            };
+
+            const titulo = getVal(['titulo', 'título', 'title', 'nombre', 'name', 'titulos', 'titles']) || 'Sin Título';
+            const autor = getVal(['autor', 'author', 'escritor', 'autores', 'authors', 'escritores']);
+            const isbn = getVal(['isbn', 'código', 'codigo', 'identificador']);
+            const editorial = getVal(['editorial', 'publisher', 'editoriales']);
+            const anio = getVal(['año', 'anio', 'year', 'fecha']);
+            const edicion = getVal(['edición', 'edicion', 'edition', 'ediciones']);
+            let cantidad = getVal(['cantidad', 'ejemplares', 'stock', 'quantity', 'cantidades']);
+            cantidad = cantidad ? parseInt(cantidad) : 1;
+
+            db.run('INSERT INTO books (titulo, autor, isbn, editorial, anio, edicion, cantidad, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [titulo, autor, isbn, editorial, anio, edicion, cantidad, req.user.id], function(err) {
+                if (err) console.error("Error inserting book from excel:", err);
+            });
+            count++;
+        });
+
+        res.json({ success: true, message: `Se procesaron ${count} libros encontrados en el archivo.` });
+
+    } catch(err) {
+        console.error("Error processing excel file:", err);
+        return res.status(500).json({ error: 'Error procesando el archivo Excel: ' + err.message });
+    }
+});
+
 // --- RUTAS DE MOCHILAS ---
 app.get('/api/backpacks', authenticateToken, (req, res) => {
     db.all('SELECT * FROM backpacks', [], (err, rows) => {
@@ -418,6 +568,112 @@ app.delete('/api/transactions/:id', authenticateToken, (req, res) => {
     db.run('DELETE FROM transactions WHERE id = ?', [id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
+    });
+});
+
+// --- RUTAS DE LECTORES Y PRESTAMOS INDIVIDUALES ---
+
+app.get('/api/readers/:cedula', authenticateToken, (req, res) => {
+    db.get('SELECT * FROM readers WHERE cedula = ?', [req.params.cedula], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: "Lector no encontrado" });
+        res.json(row);
+    });
+});
+
+app.post('/api/book-loans/lend', authenticateToken, (req, res) => {
+    const { book_id, cedula, nombre, apellido, telefono, direccion } = req.body;
+    
+    // First find or create reader
+    db.get('SELECT id FROM readers WHERE cedula = ?', [cedula], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        let readerId = row ? row.id : null;
+        
+        const createLoan = (rId) => {
+            db.run('INSERT INTO book_loans (book_id, reader_id, created_by) VALUES (?, ?, ?)',
+                [book_id, rId, req.user.id], function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true, loan_id: this.lastID });
+            });
+        };
+
+        if (readerId) {
+            createLoan(readerId);
+        } else {
+            db.run('INSERT INTO readers (cedula, nombre, apellido, telefono, direccion, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+                [cedula, nombre, apellido, telefono, direccion, req.user.id], function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    createLoan(this.lastID);
+            });
+        }
+    });
+});
+
+app.post('/api/book-loans/return/:id', authenticateToken, (req, res) => {
+    db.run("UPDATE book_loans SET status = 'Returned', return_date = CURRENT_TIMESTAMP, returned_by = ? WHERE id = ?", [req.user.id, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/book-loans/active', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT bl.id as loan_id, bl.loan_date, 
+               b.titulo as book_title, b.autor as book_author, b.isbn,
+               r.cedula, r.nombre, r.apellido, r.telefono, r.direccion
+        FROM book_loans bl
+        JOIN books b ON bl.book_id = b.id
+        JOIN readers r ON bl.reader_id = r.id
+        WHERE bl.status = 'Active'
+        ORDER BY bl.loan_date DESC
+    `, [], (err, rows) => {
+         if (err) return res.status(500).json({ error: err.message });
+         res.json(rows);
+    });
+});
+
+app.get('/api/book-loans/book/:book_id', authenticateToken, (req, res) => {
+    db.all(`SELECT * FROM book_loans WHERE book_id = ? AND status = 'Active'`, [req.params.book_id], (err, rows) => {
+         if (err) return res.status(500).json({ error: err.message });
+         res.json(rows);
+    });
+});
+
+app.get('/api/book-loans/history', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT bl.id as loan_id, bl.status, bl.loan_date, bl.return_date,
+               b.titulo as book_title, b.autor as book_author, b.isbn,
+               r.cedula, r.nombre, r.apellido, r.telefono, r.direccion,
+               u1.nombre as admin_prestamo,
+               u2.nombre as admin_recepcion
+        FROM book_loans bl
+        JOIN books b ON bl.book_id = b.id
+        JOIN readers r ON bl.reader_id = r.id
+        LEFT JOIN users u1 ON bl.created_by = u1.id
+        LEFT JOIN users u2 ON bl.returned_by = u2.id
+        ORDER BY bl.loan_date DESC
+    `, [], (err, rows) => {
+         if (err) return res.status(500).json({ error: err.message });
+         res.json(rows);
+    });
+});
+
+app.get('/api/book-loans/history/book/:book_id', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT bl.id as loan_id, bl.status, bl.loan_date, bl.return_date,
+               r.cedula, r.nombre, r.apellido,
+               u1.nombre as admin_prestamo,
+               u2.nombre as admin_recepcion
+        FROM book_loans bl
+        JOIN readers r ON bl.reader_id = r.id
+        LEFT JOIN users u1 ON bl.created_by = u1.id
+        LEFT JOIN users u2 ON bl.returned_by = u2.id
+        WHERE bl.book_id = ?
+        ORDER BY bl.loan_date DESC
+    `, [req.params.book_id], (err, rows) => {
+         if (err) return res.status(500).json({ error: err.message });
+         res.json(rows);
     });
 });
 

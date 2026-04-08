@@ -13,6 +13,10 @@ import Pavilions from './pages/Pavilions';
 import Backpacks from './pages/Backpacks';
 import Transactions from './pages/Transactions';
 import Users from './pages/Users';
+import Books from './pages/Books';
+import BookEntry from './pages/BookEntry';
+import BookLoans from './pages/BookLoans';
+import BorrowHistory from './pages/BorrowHistory';
 
 function App() {
   return (
@@ -29,6 +33,10 @@ function App() {
               <Route path="/schools" element={<Schools />} />
               <Route path="/pavilions" element={<Pavilions />} />
               <Route path="/backpacks" element={<Backpacks />} />
+              <Route path="/books" element={<Books />} />
+              <Route path="/books/add" element={<BookEntry />} />
+              <Route path="/book-loans" element={<BookLoans />} />
+              <Route path="/book-loans/history" element={<BorrowHistory />} />
               <Route path="/transactions" element={<Transactions />} />
               
               {/* Solo Admin */}

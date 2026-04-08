@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Home, Users, Layers, Map, Backpack, ArrowRightLeft } from 'lucide-react';
+import { Menu, X, LogOut, Home, Users, Layers, Map, Backpack, ArrowRightLeft, BookOpen, ArrowLeft, PlusCircle, History } from 'lucide-react';
 import { useAuth } from '../services/AuthContext';
 import babboLogo from '../assets/logo.png';
 
 const Layout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, workspaceMode, setWorkspaceMode } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -26,24 +26,46 @@ const Layout = () => {
         </button>
         
         <nav className={`nav-menu ${menuOpen ? 'open' : ''}`}>
-          <Link to="/" className={`nav-link ${isActive('/')}`} onClick={() => setMenuOpen(false)}>
-             <Home size={18}/> Inicio
+          <Link to="/" className={`nav-link ${isActive('/')}`} onClick={() => { setWorkspaceMode(null); setMenuOpen(false); }}>
+             <Home size={18}/> Inicio Principal
           </Link>
-          <Link to="/transactions" className={`nav-link ${isActive('/transactions')}`} onClick={() => setMenuOpen(false)}>
-             <ArrowRightLeft size={18}/> Entregas
-          </Link>
-          <Link to="/backpacks" className={`nav-link ${isActive('/backpacks')}`} onClick={() => setMenuOpen(false)}>
-             <Backpack size={18}/> Mochilas
-          </Link>
-          <Link to="/sectors" className={`nav-link ${isActive('/sectors')}`} onClick={() => setMenuOpen(false)}>
-             <Map size={18}/> Colegios
-          </Link>
-          <Link to="/schools" className={`nav-link ${isActive('/schools')}`} onClick={() => setMenuOpen(false)}>
-             <Layers size={18}/> Escuelas
-          </Link>
-          <Link to="/pavilions" className={`nav-link ${isActive('/pavilions')}`} onClick={() => setMenuOpen(false)}>
-             <Layers size={18}/> Niveles
-          </Link>
+
+          {workspaceMode === 'backpacks' && (
+            <>
+              <Link to="/transactions" className={`nav-link ${isActive('/transactions')}`} onClick={() => setMenuOpen(false)}>
+                 <ArrowRightLeft size={18}/> Entregas
+              </Link>
+              <Link to="/backpacks" className={`nav-link ${isActive('/backpacks')}`} onClick={() => setMenuOpen(false)}>
+                 <Backpack size={18}/> Mochilas
+              </Link>
+              <Link to="/sectors" className={`nav-link ${isActive('/sectors')}`} onClick={() => setMenuOpen(false)}>
+                 <Map size={18}/> Colegios
+              </Link>
+              <Link to="/schools" className={`nav-link ${isActive('/schools')}`} onClick={() => setMenuOpen(false)}>
+                 <Layers size={18}/> Escuelas
+              </Link>
+              <Link to="/pavilions" className={`nav-link ${isActive('/pavilions')}`} onClick={() => setMenuOpen(false)}>
+                 <Layers size={18}/> Niveles
+              </Link>
+            </>
+          )}
+
+          {workspaceMode === 'books' && (
+            <>
+              <Link to="/books" className={`nav-link ${isActive('/books')}`} onClick={() => setMenuOpen(false)}>
+                 <BookOpen size={18}/> Catálogo
+              </Link>
+              <Link to="/books/add" className={`nav-link ${isActive('/books/add')}`} onClick={() => setMenuOpen(false)}>
+                 <PlusCircle size={18}/> Ingresar Libros
+              </Link>
+              <Link to="/book-loans" className={`nav-link ${isActive('/book-loans')}`} onClick={() => setMenuOpen(false)}>
+                 <ArrowRightLeft size={18}/> Préstamos Activos
+              </Link>
+              <Link to="/book-loans/history" className={`nav-link ${isActive('/book-loans/history')}`} onClick={() => setMenuOpen(false)}>
+                 <History size={18}/> Historial
+              </Link>
+            </>
+          )}
           
           {user && user.id === 1 && (
               <Link to="/users" className={`nav-link ${isActive('/users')}`} onClick={() => setMenuOpen(false)}>
