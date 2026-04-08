@@ -677,6 +677,46 @@ app.get('/api/book-loans/history/book/:book_id', authenticateToken, (req, res) =
     });
 });
 
+app.get('/api/readers', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT r.*,
+               (SELECT COUNT(*) FROM book_loans WHERE reader_id = r.id) as total_prestamos,
+               (SELECT COUNT(*) FROM book_loans WHERE reader_id = r.id AND status = 'Active') as prestamos_activos
+        FROM readers r
+        ORDER BY r.nombre ASC, r.apellido ASC
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.put('/api/readers/:id', authenticateToken, (req, res) => {
+    const { telefono, direccion } = req.body;
+    db.run('UPDATE readers SET telefono = ?, direccion = ? WHERE id = ?', 
+      [telefono, direccion, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/book-loans/history/reader/:reader_id', authenticateToken, (req, res) => {
+    db.all(`
+        SELECT bl.id as loan_id, bl.status, bl.loan_date, bl.return_date,
+               b.titulo as book_title, b.autor as book_author, b.isbn,
+               u1.nombre as admin_prestamo,
+               u2.nombre as admin_recepcion
+        FROM book_loans bl
+        JOIN books b ON bl.book_id = b.id
+        LEFT JOIN users u1 ON bl.created_by = u1.id
+        LEFT JOIN users u2 ON bl.returned_by = u2.id
+        WHERE bl.reader_id = ?
+        ORDER BY bl.loan_date DESC
+    `, [req.params.reader_id], (err, rows) => {
+         if (err) return res.status(500).json({ error: err.message });
+         res.json(rows);
+    });
+});
+
 app.listen(port, () => {
   console.log(`Babbo Biblioteca Backend listening at http://localhost:${port}`);
 });

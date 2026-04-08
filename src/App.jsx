@@ -17,6 +17,7 @@ import Books from './pages/Books';
 import BookEntry from './pages/BookEntry';
 import BookLoans from './pages/BookLoans';
 import BorrowHistory from './pages/BorrowHistory';
+import Readers from './pages/Readers';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
               <Route path="/books/add" element={<BookEntry />} />
               <Route path="/book-loans" element={<BookLoans />} />
               <Route path="/book-loans/history" element={<BorrowHistory />} />
+              <Route path="/readers" element={<Readers />} />
               <Route path="/transactions" element={<Transactions />} />
               
               {/* Solo Admin */}

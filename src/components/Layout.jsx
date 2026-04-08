@@ -64,6 +64,9 @@ const Layout = () => {
               <Link to="/book-loans/history" className={`nav-link ${isActive('/book-loans/history')}`} onClick={() => setMenuOpen(false)}>
                  <History size={18}/> Historial
               </Link>
+              <Link to="/readers" className={`nav-link ${isActive('/readers')}`} onClick={() => setMenuOpen(false)}>
+                 <Users size={18}/> Lectores
+              </Link>
             </>
           )}
           
