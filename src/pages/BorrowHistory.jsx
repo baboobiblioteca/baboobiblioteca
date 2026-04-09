@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useToast } from '../services/ToastContext';
-import { Search, History, Book, User, Calendar } from 'lucide-react';
+import { Search, History, Book, User, Calendar, Download } from 'lucide-react';
 
 const BorrowHistory = () => {
     const [history, setHistory] = useState([]);
@@ -38,12 +38,50 @@ const BorrowHistory = () => {
                aObj.includes(searchAuthor.toLowerCase());
     });
 
+    const exportToCSV = () => {
+        if (filteredHistory.length === 0) {
+            showToast('No hay datos para exportar', 'error');
+            return;
+        }
+
+        const headers = ['Libro', 'Autor', 'ISBN', 'Lector', 'Cedula', 'Estado', 'Fecha Prestamo', 'Admin Entrega', 'Fecha Devolucion', 'Admin Recepcion'];
+        const rows = filteredHistory.map(h => [
+            `"${(h.book_title || '').replace(/"/g, '""')}"`,
+            `"${(h.book_author || '').replace(/"/g, '""')}"`,
+            `"${h.isbn || ''}"`,
+            `"${h.nombre} ${h.apellido}"`,
+            `"${h.cedula}"`,
+            h.status === 'Returned' ? 'Devuelto' : 'Prestado',
+            h.loan_date ? `"${new Date(h.loan_date).toLocaleString()}"` : '',
+            `"${h.admin_prestamo || ''}"`,
+            h.return_date ? `"${new Date(h.return_date).toLocaleString()}"` : '',
+            `"${h.admin_recepcion || ''}"`
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `auditoria_historica_prestamos.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div>
-            <h2 style={{marginBottom: '20px', color: 'var(--primary-color)'}}>
-                <History size={24} style={{verticalAlign: 'middle', marginRight: '10px'}}/>
-                Auditoría Global de Préstamos
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>
+                    <History size={24} style={{verticalAlign: 'middle', marginRight: '10px'}}/>
+                    Auditoría Global de Préstamos
+                </h2>
+                <button onClick={exportToCSV} className="btn btn-primary" style={{ backgroundColor: '#27ae60' }}>
+                    <Download size={18} style={{ verticalAlign: 'middle', marginRight: '5px' }} />
+                    Exportar Excel
+                </button>
+            </div>
 
             <div className="card" style={{borderTop: '4px solid var(--primary-color)', marginBottom: '20px'}}>
                 <h3 className="card-title" style={{marginTop: 0, marginBottom: '15px', fontSize: '1rem'}}><Search size={16} style={{verticalAlign: 'middle'}}/> Filtros de Búsqueda</h3>

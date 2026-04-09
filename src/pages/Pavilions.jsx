@@ -54,11 +54,11 @@ const Pavilions = () => {
     };
 
     const handleDelete = async (id) => {
-        if(!window.confirm('¿Está seguro de eliminar este nivel?')) return;
+        if(!window.confirm('¿Está seguro de eliminar este registro de profesor/aula?')) return;
         try {
             const res = await fetchWithAuth(`/api/pavilions/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                showToast('Nivel eliminado correctamente');
+                showToast('Registro eliminado correctamente');
                 loadData();
             } else {
                 const data = await res.json();
@@ -90,7 +90,7 @@ const Pavilions = () => {
                 showToast(data.error || 'Error al procesar', 'error');
                 return;
             }
-            showToast(editingId ? 'Nivel actualizado correctamente' : 'Nivel registrado correctamente');
+            showToast(editingId ? 'Profesor actualizado correctamente' : 'Profesor registrado correctamente');
             resetForm();
             loadData();
         } catch (e) {
@@ -104,7 +104,7 @@ const Pavilions = () => {
             <div className="card" style={{borderTop: '4px solid var(--primary-color)'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
                     <h2 className="card-title" style={{margin: 0, border: 'none', padding: 0}}>
-                        {editingId ? 'Editando Nivel' : 'Mantenimiento de Niveles'}
+                        {editingId ? 'Editando Profesor' : 'Mantenimiento de Profesores'}
                     </h2>
                     {editingId && (
                         <button type="button" onClick={resetForm} className="btn btn-secondary">
@@ -121,7 +121,7 @@ const Pavilions = () => {
                         </select>
                     </div>
                     <div className="form-group" style={{marginBottom: 0}}>
-                        <label>Nombre/Grado del Nivel</label>
+                        <label>Grado / Aula</label>
                         <input className="form-control" value={nombre} onChange={e => setNombre(e.target.value)} required />
                     </div>
                     <div className="form-group" style={{marginBottom: 0}}>
@@ -138,19 +138,19 @@ const Pavilions = () => {
                     </div>
                     <div style={{gridColumn: '1 / -1'}}>
                         <button type="submit" className="btn btn-primary btn-block">
-                            {editingId ? <><Save size={18}/> Actualizar Nivel</> : <><Plus size={18}/> Registrar Nivel</>}
+                            {editingId ? <><Save size={18}/> Actualizar Profesor</> : <><Plus size={18}/> Registrar Profesor</>}
                         </button>
                     </div>
                 </form>
             </div>
 
-            <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Niveles Registrados (Modo Tabla)</h3>
+            <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Profesores Registrados (Modo Tabla)</h3>
             <div style={{overflowX: 'auto'}}>
                 <table style={{width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)'}}>
                     <thead style={{backgroundColor: 'var(--primary-color)', color: 'white'}}>
                         <tr>
                             <th style={{padding: '12px', textAlign: 'left'}}>Escuela</th>
-                            <th style={{padding: '12px', textAlign: 'left'}}>Nivel</th>
+                            <th style={{padding: '12px', textAlign: 'left'}}>Grado / Aula</th>
                             <th style={{padding: '12px', textAlign: 'left'}}>Profesor</th>
                             <th style={{padding: '12px', textAlign: 'center'}}>Celular</th>
                             <th style={{padding: '12px', textAlign: 'center'}}>Alumnos</th>
@@ -181,7 +181,7 @@ const Pavilions = () => {
                         ))}
                     </tbody>
                 </table>
-                {pavilions.length === 0 && <div style={{padding: '20px', textAlign: 'center', background: 'white', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px'}}>No hay niveles registrados.</div>}
+                {pavilions.length === 0 && <div style={{padding: '20px', textAlign: 'center', background: 'white', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px'}}>No hay profesores registrados.</div>}
             </div>
         </div>
     );

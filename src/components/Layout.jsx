@@ -45,7 +45,7 @@ const Layout = () => {
                  <Layers size={18}/> Escuelas
               </Link>
               <Link to="/pavilions" className={`nav-link ${isActive('/pavilions')}`} onClick={() => setMenuOpen(false)}>
-                 <Layers size={18}/> Niveles
+                 <Layers size={18}/> Profesores
               </Link>
             </>
           )}

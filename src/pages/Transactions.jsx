@@ -186,7 +186,7 @@ const Transactions = () => {
     };
 
     const handlePickup = async (tx) => {
-        if(!window.confirm(`¿Confirmar recogida de la mochila ${tx.backpack_number} del nivel ${tx.pavilion_nombre}?`)) return;
+        if(!window.confirm(`¿Confirmar recogida de la mochila ${tx.backpack_number} del aula ${tx.pavilion_nombre}?`)) return;
         
         try {
             const formattedDate = getLocalDatetime().replace('T', ' ') + ':00';
@@ -391,7 +391,7 @@ const Transactions = () => {
             'Fecha': formatDate(t.transaction_date),
             'Acción': t.action === 'Delivered' ? 'Entrega' : 'Recogida',
             'Mochila': t.backpack_graphic ? `${t.backpack_number} (${t.backpack_graphic})` : t.backpack_number,
-            'Nivel': t.pavilion_nombre || 'N/A',
+            'Grado/Aula': t.pavilion_nombre || 'N/A',
             'Escuela': t.school_nombre || 'N/A',
             'Profesor': t.teacher_nombre || 'N/A',
             'Celular': t.teacher_phone || 'N/A',
@@ -458,7 +458,7 @@ const Transactions = () => {
                                 <input className="form-control" value={editPavilionPhone} onChange={e => setEditPavilionPhone(e.target.value)} required />
                             </div>
                             <div className="form-group" style={{marginBottom: 0}}>
-                                <label>Grado / Nivel</label>
+                                <label>Grado / Aula</label>
                                 <input className="form-control" value={editPavilionName} onChange={e => setEditPavilionName(e.target.value)} required />
                             </div>
                             <div className="form-group" style={{marginBottom: 0}}>
@@ -521,7 +521,7 @@ const Transactions = () => {
                         <input className="form-control" value={newPavilionPhone} onChange={e => setNewPavilionPhone(e.target.value)} required placeholder="Ej: 3001234567" />
                     </div>
                     <div className="form-group" style={{marginBottom: 0}}>
-                        <label>Grado / Nivel</label>
+                        <label>Grado / Aula</label>
                         <input className="form-control" value={newPavilionName} onChange={e => setNewPavilionName(e.target.value)} required placeholder="Ej: 5to Primaria" />
                     </div>
                     <div className="form-group" style={{marginBottom: 0}}>
