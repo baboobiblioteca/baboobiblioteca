@@ -57,11 +57,11 @@ const Backpacks = () => {
     }
 
     const handleDelete = async (id) => {
-        if(!window.confirm('¿Está seguro de eliminar esta mochila? Esta acción no se puede deshacer.')) return;
+        if(!window.confirm('¿Está seguro de eliminar este morral? Esta acción no se puede deshacer.')) return;
         try {
             const res = await fetchWithAuth(`/api/backpacks/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                showToast('Mochila eliminada correctamente');
+                showToast('Morral eliminado correctamente');
                 loadData();
             } else {
                 showToast('Error al eliminar', 'error');
@@ -102,11 +102,11 @@ const Backpacks = () => {
             
             if (!res.ok) {
                 const data = await res.json();
-                showToast(data.error || 'Error al procesar la mochila', 'error');
+                showToast(data.error || 'Error al procesar el morral', 'error');
                 return;
             }
             
-            showToast(editingId ? 'Mochila actualizada correctamente' : 'Mochila registrada correctamente');
+            showToast(editingId ? 'Morral actualizado correctamente' : 'Morral registrado correctamente');
             resetForm();
             loadData();
         } catch (e) {
@@ -119,7 +119,7 @@ const Backpacks = () => {
             <div className="card" style={{borderTop: '4px solid var(--accent-color)'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
                     <h2 className="card-title" style={{margin: 0, border: 'none', padding: 0}}>
-                        {editingId ? 'Editando Mochila' : 'Inventario de Mochilas Viajeras'}
+                        {editingId ? 'Editando Morral' : 'Inventario de Morrales Viajeros'}
                     </h2>
                     {editingId && (
                         <button type="button" onClick={resetForm} className="btn btn-secondary">
@@ -147,7 +147,7 @@ const Backpacks = () => {
                         <input type="number" min="1" className="form-control" value={bookCount} onChange={e => setBookCount(parseInt(e.target.value))} required />
                     </div>
                     <div className="form-group" style={{marginBottom: 0, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column'}}>
-                        <label>Foto de la Mochila / Animal</label>
+                        <label>Foto del Morral / Animal</label>
                         <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
                             {editingId && backpacks.find(b => b.id === editingId)?.image_url && (
                                 <img 
@@ -192,13 +192,13 @@ const Backpacks = () => {
                     </div>
                     <div style={{gridColumn: '1 / -1', marginTop: '10px'}}>
                         <button type="submit" className="btn btn-primary btn-block">
-                            {editingId ? <><Save size={18}/> Actualizar Mochila</> : <><Plus size={18}/> Agregar Mochila</>}
+                            {editingId ? <><Save size={18}/> Actualizar Morral</> : <><Plus size={18}/> Agregar Morral</>}
                         </button>
                     </div>
                 </form>
             </div>
 
-            <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Registros de Mochilas (Modo Tabla)</h3>
+            <h3 style={{marginTop: '30px', marginBottom: '15px'}}>Registros de Morrales (Modo Tabla)</h3>
             
             {/* Visualización Data Grid Tradition (Tabular) */}
             <div style={{overflowX: 'auto'}}>
@@ -218,7 +218,7 @@ const Backpacks = () => {
                             <tr key={b.id} style={{borderBottom: '1px solid var(--border-color)'}}>
                                 <td style={{padding: '8px', textAlign: 'center'}}>
                                     {b.image_url ? (
-                                        <img src={b.image_url.startsWith('http') ? b.image_url : `${API_URL}${b.image_url}`} alt="Mochila" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc'}} />
+                                        <img src={b.image_url.startsWith('http') ? b.image_url : `${API_URL}${b.image_url}`} alt="Morral" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc'}} />
                                     ) : (
                                         <div style={{width: '60px', height: '60px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#999', margin: '0 auto'}}>N/A</div>
                                     )}
@@ -243,7 +243,7 @@ const Backpacks = () => {
                         ))}
                     </tbody>
                 </table>
-                {backpacks.length === 0 && <div style={{padding: '20px', textAlign: 'center', background: 'white', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px'}}>No hay mochilas registradas en el sistema.</div>}
+                {backpacks.length === 0 && <div style={{padding: '20px', textAlign: 'center', background: 'white', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px'}}>No hay morrales registrados en el sistema.</div>}
             </div>
         </div>
     );

@@ -186,7 +186,7 @@ const Transactions = () => {
     };
 
     const handlePickup = async (tx) => {
-        if(!window.confirm(`¿Confirmar recogida de la mochila ${tx.backpack_number} del aula ${tx.pavilion_nombre}?`)) return;
+        if(!window.confirm(`¿Confirmar recogida del morral ${tx.backpack_number} del aula ${tx.pavilion_nombre}?`)) return;
         
         try {
             const formattedDate = getLocalDatetime().replace('T', ' ') + ':00';
@@ -390,7 +390,7 @@ const Transactions = () => {
         const dataToExport = filteredTransactions.map(t => ({
             'Fecha': formatDate(t.transaction_date),
             'Acción': t.action === 'Delivered' ? 'Entrega' : 'Recogida',
-            'Mochila': t.backpack_graphic ? `${t.backpack_number} (${t.backpack_graphic})` : t.backpack_number,
+            'Morral': t.backpack_graphic ? `${t.backpack_number} (${t.backpack_graphic})` : t.backpack_number,
             'Grado/Aula': t.pavilion_nombre || 'N/A',
             'Escuela': t.school_nombre || 'N/A',
             'Profesor': t.teacher_nombre || 'N/A',
@@ -418,9 +418,9 @@ const Transactions = () => {
                         </h2>
                         <form onSubmit={handleUpdate} style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end'}}>
                             <div className="form-group" style={{marginBottom: 0}}>
-                                <label>Seleccionar Mochila</label>
+                                <label>Seleccionar Morral</label>
                                 <select className="form-control" value={editBackpackId} onChange={e => setEditBackpackId(e.target.value)} required>
-                                    <option value="">-- Elige Mochila --</option>
+                                    <option value="">-- Elige Morral --</option>
                                     {backpacks.map(b => <option key={b.id} value={b.id}>{b.internal_number} ({b.graphic_identifier})</option>)}
                                 </select>
                             </div>
@@ -480,9 +480,9 @@ const Transactions = () => {
                 </h2>
                 <form onSubmit={handleDeliver} style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end'}}>
                     <div className="form-group" style={{marginBottom: 0}}>
-                        <label>Seleccionar Mochila</label>
+                        <label>Seleccionar Morral</label>
                         <select className="form-control" value={backpackId} onChange={e => setBackpackId(e.target.value)} required>
-                            <option value="">-- Elige Mochila --</option>
+                            <option value="">-- Elige Morral --</option>
                             {backpacks.map(b => <option key={b.id} value={b.id}>{b.internal_number} ({b.graphic_identifier})</option>)}
                         </select>
                     </div>
@@ -565,9 +565,9 @@ const Transactions = () => {
                     </select>
                 </div>
                 <div className="form-group" style={{marginBottom: 0, flex: '1 1 200px'}}>
-                    <label>Mochila</label>
+                    <label>Morral</label>
                     <select className="form-control" value={filterBackpack} onChange={e => setFilterBackpack(e.target.value)}>
-                        <option value="">Todas las Mochilas</option>
+                        <option value="">Todos los Morrales</option>
                         {uniqueBackpacks.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                 </div>
@@ -584,7 +584,7 @@ const Transactions = () => {
                         <tr>
                             <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Fecha</th>
                             <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Acción</th>
-                            <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Mochila</th>
+                            <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Morral</th>
                             <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Escuela</th>
                             <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Prof.</th>
                             <th style={{padding: '8px 4px', fontSize: '0.85rem', textAlign: 'left'}}>Grado</th>

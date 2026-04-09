@@ -60,8 +60,8 @@ const Home = () => {
                         <div style={{background: 'rgba(52, 152, 219, 0.1)', padding: '25px', borderRadius: '50%', color: 'var(--accent-color)', marginBottom: '20px'}}>
                             <Backpack size={64} />
                         </div>
-                        <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: 'var(--primary-color)'}}>Mochilas Viajeras</h3>
-                        <p style={{color: 'var(--text-muted)', margin: 0}}>Control de logística de viajes, escuelas, niveles, mochilas y transacciones en campo.</p>
+                        <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: 'var(--primary-color)'}}>Morrales Viajeros</h3>
+                        <p style={{color: 'var(--text-muted)', margin: 0}}>Control de logística de viajes, escuelas, niveles, morrales y transacciones en campo.</p>
                     </div>
 
                     <div className="card workspace-card" onClick={() => { setWorkspaceMode('books'); navigate('/books'); }} 
@@ -85,7 +85,7 @@ const Home = () => {
     return (
         <div>
             <h2 style={{marginBottom: '20px', color: 'var(--primary-color)'}}>
-                Panel de Mochilas Viajeras
+                Panel de Morrales Viajeros
             </h2>
             
             <div style={{
@@ -120,7 +120,7 @@ const Home = () => {
                     </div>
                     <div>
                         <h3 style={{fontSize: '2rem', margin: 0}}>{stats.backpacks}</h3>
-                        <p style={{color: 'var(--text-muted)', margin: 0}}>Mochilas Registradas</p>
+                        <p style={{color: 'var(--text-muted)', margin: 0}}>Morrales Registrados</p>
                     </div>
                 </div>
 
@@ -130,7 +130,7 @@ const Home = () => {
                     </div>
                     <div>
                         <h3 style={{fontSize: '2rem', margin: 0}}>{stats.activeTransactions}</h3>
-                        <p style={{color: 'var(--text-muted)', margin: 0}}>Mochilas en Campo</p>
+                        <p style={{color: 'var(--text-muted)', margin: 0}}>Morrales en Campo</p>
                     </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@ const Home = () => {
                 <h3 className="card-title">Acciones Rápidas</h3>
                 <div style={{display: 'flex', gap: '15px', flexWrap: 'wrap'}}>
                     <Link to="/transactions" className="btn btn-primary">Registrar Entrega / Recogida</Link>
-                    <Link to="/backpacks" className="btn btn-secondary">Añadir Nueva Mochila</Link>
+                    <Link to="/backpacks" className="btn btn-secondary">Añadir Nuevo Morral</Link>
                 </div>
             </div>
         </div>

@@ -36,7 +36,7 @@ const Layout = () => {
                  <ArrowRightLeft size={18}/> Entregas
               </Link>
               <Link to="/backpacks" className={`nav-link ${isActive('/backpacks')}`} onClick={() => setMenuOpen(false)}>
-                 <Backpack size={18}/> Mochilas
+                 <Backpack size={18}/> Morrales
               </Link>
               <Link to="/sectors" className={`nav-link ${isActive('/sectors')}`} onClick={() => setMenuOpen(false)}>
                  <Map size={18}/> Colegios
